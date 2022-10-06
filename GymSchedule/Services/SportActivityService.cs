@@ -1,13 +1,8 @@
 ﻿using GymSchedule.Models;
 using GymSchedule.RequestBody;
 using Microsoft.Extensions.Options;
-using MongoDB.Bson;
 using MongoDB.Driver;
-
-using System;
 using System.Data;
-using System.Diagnostics;
-using System.Globalization;
 
 namespace GymSchedule.Services
 {
@@ -40,9 +35,9 @@ namespace GymSchedule.Services
         public List<ActivityBody> GetDailySportActivitys(DateTime day)
         {
             var builder = Builders<SportsActivity>.Filter;
-            var filter = builder.Gte("StartDate", day)
-                & builder.Lte("StartDate", day.AddHours(24))
-                & builder.Eq("ToRemove", false);
+            var filter = builder.Gte(nameof(SportsActivity.StartDate), day)
+                & builder.Lte(nameof(SportsActivity.StartDate), day.AddHours(24))
+                & builder.Eq(nameof(SportsActivity.ToRemove), false);
 
             var activityList = _sportsActivityCollection.Find(filter).ToList();
 
@@ -58,7 +53,8 @@ namespace GymSchedule.Services
         public ActivityBody? GetSportActivityById(string id)
         {
             var builder = Builders<SportsActivity>.Filter;
-            var filter = builder.Eq("Id", id) & builder.Eq("ToRemove", false);
+            var filter = builder.Eq(nameof(SportsActivity.Id), id) 
+                & builder.Eq(nameof(SportsActivity.ToRemove), false);
 
             var activity = _sportsActivityCollection.Find(filter).Single();
 
@@ -79,9 +75,9 @@ namespace GymSchedule.Services
             var sunday = day.AddDays(-cuurenDayOfWeek+7);
 
             var builder = Builders<SportsActivity>.Filter;
-            var filter = builder.Gte("StartDate", monday)
-                & builder.Lte("StartDate", sunday.AddHours(24))
-                & builder.Eq("ToRemove", false);
+            var filter = builder.Gte(nameof(SportsActivity.StartDate), monday)
+                & builder.Lte(nameof(SportsActivity.StartDate), sunday.AddHours(24))
+                & builder.Eq(nameof(SportsActivity.ToRemove), false);
 
             var activityList = _sportsActivityCollection.Find(filter).ToList();
 
@@ -97,17 +93,17 @@ namespace GymSchedule.Services
         public DeleteResult RemoveSportActivityByDate(DateTime activityDay)
         {
             var builder = Builders<SportsActivity>.Filter;
-            var filter = builder.Gte("StartDate", activityDay)
-                & builder.Lte("StartDate", activityDay.AddHours(24))
-                & builder.Eq("ToRemove", false);
+            var filter = builder.Gte(nameof(SportsActivity.StartDate), activityDay)
+                & builder.Lte(nameof(SportsActivity.StartDate), activityDay.AddHours(24))
+                & builder.Eq(nameof(SportsActivity.ToRemove), false);
 
             return _sportsActivityCollection.DeleteMany(filter);
         }
 
         public UpdateResult SoftRemoveSportActivityById(string id)
         {
-            var filter = Builders<SportsActivity>.Filter.Eq("Id", id);
-            var update = Builders<SportsActivity>.Update.Set("ToRemove", true);
+            var filter = Builders<SportsActivity>.Filter.Eq(nameof(SportsActivity.Id), id);
+            var update = Builders<SportsActivity>.Update.Set(nameof(SportsActivity.ToRemove), true);
 
             return _sportsActivityCollection.UpdateOne(filter, update);
         }
@@ -115,7 +111,8 @@ namespace GymSchedule.Services
         public UpdateResult UpdateSportActivity(string id, ActivityBody activity)
         {
             var builderFilter = Builders<SportsActivity>.Filter;
-            var filter = builderFilter.Eq("Id", id) & builderFilter.Eq("ToRemove", false);
+            var filter = builderFilter.Eq(nameof(SportsActivity.Id), id) 
+                & builderFilter.Eq(nameof(SportsActivity.ToRemove), false);
 
             var update = Builders<SportsActivity>.Update.Set(nameof(SportsActivity.ActivityName), activity.ActivityName)
                 .Set(nameof(SportsActivity.StartDate), activity.StartDate)
