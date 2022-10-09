@@ -31,7 +31,7 @@ namespace GymSchedule.Services
             };
             _sportsActivityCollection.InsertOne(activityDbObject);
         }
-            
+
         public List<ActivityBody> GetDailySportActivitys(DateTime day)
         {
             var builder = Builders<SportsActivity>.Filter;
@@ -49,11 +49,11 @@ namespace GymSchedule.Services
                 Details = activity.Details
             }).ToList();
         }
-            
+
         public ActivityBody? GetSportActivityById(string id)
         {
             var builder = Builders<SportsActivity>.Filter;
-            var filter = builder.Eq(nameof(SportsActivity.Id), id) 
+            var filter = builder.Eq(nameof(SportsActivity.Id), id)
                 & builder.Eq(nameof(SportsActivity.ToRemove), false);
 
             var activity = _sportsActivityCollection.Find(filter).Single();
@@ -63,20 +63,18 @@ namespace GymSchedule.Services
                 ActivityName = activity.ActivityName,
                 StartDate = activity.StartDate,
                 EndDate = activity.EndDate,
-                GymNumber=activity.GymNumber,  
-                Details=activity.Details
+                GymNumber = activity.GymNumber,
+                Details = activity.Details
             };
         }
-            
+
         public List<ActivityBody> GetWeeklySportActivitys(DateTime day)
         {
-            var cuurenDayOfWeek = (int)day.DayOfWeek;
-            var monday = day.AddDays(-cuurenDayOfWeek+1);
-            var sunday = day.AddDays(-cuurenDayOfWeek+7);
+            var daysOfWeek = GetDateStartAndEndedWeek(day);
 
             var builder = Builders<SportsActivity>.Filter;
-            var filter = builder.Gte(nameof(SportsActivity.StartDate), monday)
-                & builder.Lte(nameof(SportsActivity.StartDate), sunday.AddHours(24))
+            var filter = builder.Gte(nameof(SportsActivity.StartDate), daysOfWeek.monday)
+                & builder.Lte(nameof(SportsActivity.StartDate), daysOfWeek.sunday.AddHours(24))
                 & builder.Eq(nameof(SportsActivity.ToRemove), false);
 
             var activityList = _sportsActivityCollection.Find(filter).ToList();
@@ -111,7 +109,7 @@ namespace GymSchedule.Services
         public UpdateResult UpdateSportActivity(string id, ActivityBody activity)
         {
             var builderFilter = Builders<SportsActivity>.Filter;
-            var filter = builderFilter.Eq(nameof(SportsActivity.Id), id) 
+            var filter = builderFilter.Eq(nameof(SportsActivity.Id), id)
                 & builderFilter.Eq(nameof(SportsActivity.ToRemove), false);
 
             var update = Builders<SportsActivity>.Update.Set(nameof(SportsActivity.ActivityName), activity.ActivityName)
@@ -121,6 +119,36 @@ namespace GymSchedule.Services
                 .Set(nameof(SportsActivity.Details), activity.Details);
 
             return _sportsActivityCollection.UpdateOne(filter, update);
+        }
+
+        public bool CheckAvailableActivitiesGymNumber(DateTime startDate, DateTime endDate, string gymNumber)
+        {
+            var builderFilter = Builders<SportsActivity>.Filter;
+            var filter = builderFilter.Eq(nameof(SportsActivity.GymNumber), gymNumber)
+                & (builderFilter.Gte(nameof(SportsActivity.StartDate), startDate)
+                & builderFilter.Lte(nameof(SportsActivity.StartDate), endDate))
+                | (builderFilter.Gte(nameof(SportsActivity.EndDate), startDate)
+                & builderFilter.Lte(nameof(SportsActivity.EndDate), endDate))
+                | (builderFilter.Lte(nameof(SportsActivity.StartDate), startDate)
+                & builderFilter.Gte(nameof(SportsActivity.EndDate), endDate))
+                & builderFilter.Eq(nameof(SportsActivity.ToRemove), false);
+
+            var availableActivityCount = _sportsActivityCollection.Count(filter);
+            if(availableActivityCount > 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private (DateTime monday, DateTime sunday) GetDateStartAndEndedWeek(DateTime day)
+        {
+            var cuurenDayOfWeek = (int)day.DayOfWeek;
+            var monday = day.AddDays(-cuurenDayOfWeek + 1);
+            var sunday = day.AddDays(-cuurenDayOfWeek + 7);
+
+            return (monday, sunday);
         }
     }
 }

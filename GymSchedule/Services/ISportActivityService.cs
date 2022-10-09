@@ -14,5 +14,6 @@ namespace GymSchedule.Services
         UpdateResult UpdateSportActivity(string id, ActivityBody sportsActivity);
         UpdateResult SoftRemoveSportActivityById(string id);
         DeleteResult RemoveSportActivityByDate(DateTime day);
+        bool CheckAvailableActivitiesGymNumber(DateTime startDate, DateTime endDate, string gymNumber);
     }
 }

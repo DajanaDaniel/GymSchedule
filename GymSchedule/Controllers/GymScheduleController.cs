@@ -1,6 +1,9 @@
 using GymSchedule.RequestBody;
 using GymSchedule.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
+
+using System.ComponentModel.DataAnnotations;
 
 namespace GymSchedule.Controllers
 {
@@ -19,10 +22,9 @@ namespace GymSchedule.Controllers
 
         [Produces("application/json")]
         [HttpGet("/activities/{id}")]
-        public ActionResult<ActivityBody> GetSportsActivityById(string id)
+        public ActionResult<ActivityBody> GetSportsActivityById([Required(AllowEmptyStrings = false)] string id)
         {
             var activity = sportActivityService.GetSportActivityById(id);
-
             if (activity == null)
             {
                 return NotFound($"Activity with Id: {id} not found");
@@ -36,8 +38,7 @@ namespace GymSchedule.Controllers
         public ActionResult<List<ActivityBody>> GetDailySportActivitys()
         {
             var activity = sportActivityService.GetDailySportActivitys(DateTime.Today);
-
-            if (activity.Count < 1)
+            if (activity is null || activity.Count < 1)
             {
                 return NotFound($"Not found activity for today");
             }
@@ -50,8 +51,7 @@ namespace GymSchedule.Controllers
         public ActionResult<List<ActivityBody>> GetWeekSportActivitys()
         {
             var activity = sportActivityService.GetWeeklySportActivitys(DateTime.Today);
-
-            if (activity.Count < 1)
+            if (activity is null || activity.Count < 1)
             {
                 return NotFound($"Not found activity for this week");
             }
@@ -63,6 +63,12 @@ namespace GymSchedule.Controllers
         [HttpPost("/activities")]
         public ActionResult CreateSportActivity([FromBody] ActivityBody activityBody)
         {
+            var validateResult = ValidateRequest(activityBody);
+            if (validateResult != null)
+            {
+                return validateResult;
+            }
+
             sportActivityService.CreateSportActivity(activityBody);
 
             return StatusCode(201);
@@ -70,10 +76,16 @@ namespace GymSchedule.Controllers
 
         [Consumes("application/json")]
         [HttpPut("/activities/{id}")]
-        public ActionResult UpdateSportActivity(string id, [FromBody] ActivityBody activityBody)
+        public ActionResult UpdateSportActivity([Required(AllowEmptyStrings = false)] string id, [FromBody] ActivityBody activityBody)
         {
-            var result = sportActivityService.UpdateSportActivity(id, activityBody);
-            if (result.ModifiedCount < 1)
+            var validateResult = ValidateRequest(activityBody);
+            if (validateResult != null)
+            {
+                return validateResult;
+            }
+
+            var activity = sportActivityService.UpdateSportActivity(id, activityBody);
+            if (activity is null || activity.ModifiedCount < 1)
             {
                 return NotFound("Not found data to update");
             }
@@ -82,10 +94,10 @@ namespace GymSchedule.Controllers
         }
          
         [HttpDelete("/activities/{id}")]
-        public ActionResult UpdateSportActivity(string id)
+        public ActionResult UpdateSportActivity([Required(AllowEmptyStrings = false)] string id)
         {
-            var result = sportActivityService.SoftRemoveSportActivityById(id);
-            if (result.ModifiedCount < 1)
+            var activity = sportActivityService.SoftRemoveSportActivityById(id);
+            if (activity is null || activity.ModifiedCount < 1)
             {
                 return NotFound("Not found data to remove");
             }
@@ -94,15 +106,34 @@ namespace GymSchedule.Controllers
         }
 
         [HttpDelete("/activities/{day}")]
-        public ActionResult UpdateSportActivity(DateTime day)
+        public ActionResult UpdateSportActivity([Required(AllowEmptyStrings = false)] DateTime day)
         {
-            var result = sportActivityService.RemoveSportActivityByDate(day);
-            if (result.DeletedCount < 1)
+            var activity = sportActivityService.RemoveSportActivityByDate(day);
+            if (activity is null || activity.DeletedCount < 1)
             {
                 return NotFound("Not found data to remove");
             }
 
             return NoContent();
+        }
+
+        private ActionResult? ValidateRequest(ActivityBody activityBody)
+        {
+            var startDate = activityBody.StartDate;
+            var endDate = activityBody.EndDate;
+
+            if(endDate <= startDate)
+            {
+                return BadRequest("Start date can not be after end date!");
+            }
+
+            var gymNumberAvailable = sportActivityService.CheckAvailableActivitiesGymNumber(startDate, endDate, activityBody.GymNumber);
+            if (!gymNumberAvailable)
+            {
+                return BadRequest($"At that time other activity take place in room {activityBody.GymNumber}");
+            }
+
+            return null;
         }
     }
 }
