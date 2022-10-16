@@ -32,7 +32,7 @@ namespace GymSchedule.Services
             _sportsActivityCollection.InsertOne(activityDbObject);
         }
 
-        public List<ActivityBody> GetDailySportActivitys(DateTime day)
+        public List<ActivityBody> GetDailySportActivities(DateTime day)
         {
             var builder = Builders<SportsActivity>.Filter;
             var filter = builder.Gte(nameof(SportsActivity.StartDate), day)
@@ -68,7 +68,7 @@ namespace GymSchedule.Services
             };
         }
 
-        public List<ActivityBody> GetWeeklySportActivitys(DateTime day)
+        public List<ActivityBody> GetWeeklySportActivities(DateTime day)
         {
             var daysOfWeek = GetDateStartAndEndedWeek(day);
 

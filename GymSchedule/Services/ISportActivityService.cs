@@ -7,9 +7,9 @@ namespace GymSchedule.Services
 {
     public interface ISportActivityService
     {
-        List<ActivityBody> GetDailySportActivitys(DateTime day);
+        List<ActivityBody> GetDailySportActivities(DateTime day);
         ActivityBody? GetSportActivityById(string id);
-        List<ActivityBody> GetWeeklySportActivitys(DateTime day);
+        List<ActivityBody> GetWeeklySportActivities(DateTime day);
         void CreateSportActivity(ActivityBody sportsActivity);
         UpdateResult UpdateSportActivity(string id, ActivityBody sportsActivity);
         UpdateResult SoftRemoveSportActivityById(string id);

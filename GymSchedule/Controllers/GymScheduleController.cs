@@ -1,9 +1,8 @@
 using GymSchedule.RequestBody;
 using GymSchedule.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-
 using System.ComponentModel.DataAnnotations;
+using System.Data;
 
 namespace GymSchedule.Controllers
 {
@@ -37,26 +36,26 @@ namespace GymSchedule.Controllers
         [HttpGet("/activities/today")]
         public ActionResult<List<ActivityBody>> GetDailySportActivitys()
         {
-            var activity = sportActivityService.GetDailySportActivitys(DateTime.Today);
-            if (activity is null || activity.Count < 1)
+            var activities = sportActivityService.GetDailySportActivities(DateTime.Today);
+            if (activities is null || activities.Count < 1)
             {
                 return NotFound($"Not found activity for today");
             }
             
-            return activity;
+            return activities;
         }
 
         [Produces("application/json")]
         [HttpGet("/activities/week")]
         public ActionResult<List<ActivityBody>> GetWeekSportActivitys()
         {
-            var activity = sportActivityService.GetWeeklySportActivitys(DateTime.Today);
-            if (activity is null || activity.Count < 1)
+            var activities = sportActivityService.GetWeeklySportActivities(DateTime.Today);
+            if (activities is null || activities.Count < 1)
             {
                 return NotFound($"Not found activity for this week");
             }
 
-            return activity;
+            return activities;
         }
 
         [Consumes("application/json")]
@@ -103,6 +102,18 @@ namespace GymSchedule.Controllers
             }
 
             return NoContent();
+        }
+
+        [HttpGet("/activities")]
+        public ActionResult<List<ActivityBody>> GetSportActivitysByDay([Required(AllowEmptyStrings = false)] DateTime day)
+        {
+            var activities = sportActivityService.GetDailySportActivities(day.Date);
+            if (activities is null || activities.Count < 1)
+            {
+                return NotFound($"Not found activitys for day: {day}");
+            }
+
+            return activities;
         }
 
         [HttpDelete("/activities/{day}")]
